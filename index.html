@@ -270,7 +270,7 @@ window.addEventListener("error",e=>{ if(e && e.message && !/ResizeObserver/.test
    ========================================================= */
 const BOOK = {
   title: "mnanak na qalang",
-  base: "assets/",
+  base: "",
   pages: Array.from({length:20},(_,i)=>({
     img:  `graphics/${i}.jpg`,
     voice:`speech/speech${i}.mp3`,
@@ -708,14 +708,12 @@ window.runAudit = runAudit;
 (function checkAssets(){
   const probe=new Image();
   probe.onerror=()=>showFatal(`<h2>找不到繪本素材</h2>
-  <p>請確認 <b>index.html</b> 旁邊有一個 <b>assets</b> 資料夾，而且裡面直接就是 <b>graphics</b>、<b>music</b>、<b>speech</b> 三個資料夾：</p>
+  <p>請確認 <b>index.html</b> 旁邊直接有 <b>graphics</b>、<b>music</b>、<b>speech</b> 三個資料夾：</p>
   <pre style="background:#000;padding:12px;border-radius:8px">index.html
-assets/
-  graphics/0.jpg ...
-  music/music0.mp3 ...
-  speech/speech0.mp3 ...</pre>
-  <p>常見錯誤：解壓縮後變成 assets/assets/graphics（多了一層），請把裡面那一層拿出來。<br>
-  另外請不要直接在壓縮檔裡雙擊開啟，要先「全部解壓縮」。</p>`);
+graphics/0.jpg ...
+music/music0.mp3 ...
+speech/speech0.mp3 ...</pre>
+  <p>也請確認資料夾名稱全部是小寫英文，不要在壓縮檔裡直接開啟。</p>`);
   probe.src=url(BOOK.pages[0].img);
 })();
 
