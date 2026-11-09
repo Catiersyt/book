@@ -31,6 +31,7 @@ body{
 button{font:inherit;color:inherit;cursor:pointer}
 :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+audio{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 
 /* ---------- 封面 ---------- */
 #cover{
@@ -97,9 +98,11 @@ main{flex:1;min-height:0;position:relative;display:flex;align-items:center;justi
 
 #spirit{
   position:absolute;right:10px;top:10px;width:clamp(48px,11%,90px);opacity:.0;pointer-events:none;
-  transition:opacity .4s;filter:drop-shadow(0 2px 4px #000a);
+  transition:opacity .4s;filter:drop-shadow(0 2px 4px #000a);font-size:clamp(38px,8vw,72px);
+  color:#ffd36a;text-align:center;line-height:1;
 }
 #spirit.on{opacity:.85;animation:float 2.4s ease-in-out infinite}
+#spirit[hidden]{display:none}
 @keyframes float{50%{transform:translateY(-6px) rotate(3deg)}}
 #stage.reduce #spirit.on{animation:none}
 
@@ -145,7 +148,7 @@ table.audit .no{color:#ff8a8a}
 #end h3{margin:0;font-size:28px}
 #loading{position:absolute;left:12px;top:12px;background:#000b;color:#fff;padding:4px 10px;border-radius:999px;font-size:12px;display:none}
 #loading.on{display:block}
-@media (max-width:520px){ .controls .hide-sm{display:none} header h2{font-size:14px} }
+@media (max-width:520px){ .controls .hide-sm{display:none} header h2{font-size:14px} header{gap:3px;padding:6px 5px} #pageIndicator{font-size:10px!important} header .ibtn{min-width:38px;min-height:40px;font-size:17px} }
 @media print{ body{display:none} }
 </style>
 </head>
@@ -153,7 +156,7 @@ table.audit .no{color:#ff8a8a}
 
 <!-- 封面 -->
 <section id="cover" aria-labelledby="cvTitle">
-  <img class="cv" id="cvImg" alt="繪本封面：穿藍色條紋衣的泰雅族青年與山豬" src="assets/graphics/0.jpg">
+  <img class="cv" id="cvImg" alt="繪本封面：穿藍色條紋衣的泰雅族青年與山豬" src="graphics/0.jpg">
   <h1 id="cvTitle">mnanak na qalang</h1>
   <p>一本會朗讀、會配樂的語音繪本。<br>點「開始閱讀」後，旁白與音樂會自動播放，也可以隨時暫停或翻頁。</p>
   <div class="row">
@@ -166,20 +169,29 @@ table.audit .no{color:#ff8a8a}
 <header>
   <button class="ibtn" id="menuBtn" aria-label="目錄" title="目錄 (M)">☰</button>
   <h2 id="pageTitle" aria-live="polite">語音繪本</h2>
+  <span id="pageIndicator" aria-live="polite" style="font-size:12px;white-space:nowrap">第 1 / 20 頁</span>
   <button class="ibtn" id="capBtn" aria-pressed="false" aria-label="字幕" title="字幕 (C)">字</button>
   <button class="ibtn" id="musicBtn" aria-pressed="true" aria-label="背景音樂開關" title="背景音樂 (B)">♪</button>
+  <button class="ibtn" id="muteBtn" aria-pressed="false" aria-label="靜音" title="靜音／解除靜音">🔊</button>
   <button class="ibtn" id="setBtn" aria-label="設定" title="設定 (S)">⚙</button>
   <button class="ibtn" id="fsBtn" aria-label="全螢幕" title="全螢幕 (F)">⛶</button>
 </header>
 
+<audio id="narrationAudio" preload="auto" aria-label="繪本旁白"></audio>
+<audio id="backgroundMusic" preload="auto" loop aria-label="背景音樂"></audio>
+<audio id="endingAudio" preload="auto" aria-label="結尾音樂"></audio>
 <main>
   <div id="stage" aria-roledescription="繪本頁面">
     <img class="page" id="pageImg" alt="" draggable="false">
-    <img id="spirit" src="assets/graphics/spirit.png" alt="" aria-hidden="true">
-    <div id="loading" role="status">載入中…</div>
+    <div id="spirit" aria-hidden="true">✧</div>
+    <div id="loading" role="status" aria-live="polite">載入中…</div>
+    <div id="assetError" role="alert" hidden style="position:absolute;z-index:8;left:50%;top:50%;transform:translate(-50%,-50%);width:min(88%,420px);padding:16px;background:#260d08ee;border:2px solid var(--accent);border-radius:12px;text-align:center;color:#fff">
+      <p id="assetErrorText">素材載入失敗，請檢查網路或稍後重試。</p>
+      <button class="btn-big" id="retryBtn" type="button" style="font-size:16px;padding:9px 22px;min-height:44px">重新載入</button>
+    </div>
     <div id="caption" aria-live="polite"></div>
-    <button class="edge l" id="prevEdge" aria-label="上一頁"><img src="assets/graphics/left.jpg" alt=""></button>
-    <button class="edge r" id="nextEdge" aria-label="下一頁"><img src="assets/graphics/right.jpg" alt=""></button>
+    <button class="edge l" id="prevEdge" aria-label="舞台左側翻頁" title="上一頁"><span aria-hidden="true">◀</span></button>
+    <button class="edge r" id="nextEdge" aria-label="舞台右側翻頁" title="下一頁"><span aria-hidden="true">▶</span></button>
     <div id="end" role="dialog" aria-label="故事結束">
       <h3>故事結束了</h3>
       <p>謝謝你聽完這個故事。</p>
@@ -201,7 +213,7 @@ table.audit .no{color:#ff8a8a}
     <button class="ibtn hide-sm" id="firstBtn" aria-label="第一頁" title="第一頁 (Home)">⏮</button>
     <button class="ibtn" id="prevBtn" aria-label="上一頁" title="上一頁 (←)">◀</button>
     <button class="ibtn" id="back10" aria-label="倒退 5 秒" title="倒退 5 秒 (J)">⟲</button>
-    <button class="ibtn play" id="playBtn" aria-label="播放" title="播放／暫停 (空白鍵)">▶</button>
+    <button class="ibtn play" id="playBtn" aria-label="播放朗讀" title="播放／暫停朗讀 (空白鍵)">▶</button>
     <button class="ibtn" id="fwd10" aria-label="快進 5 秒" title="快進 5 秒 (L)">⟳</button>
     <button class="ibtn" id="nextBtn" aria-label="下一頁" title="下一頁 (→)">▶</button>
     <button class="ibtn hide-sm" id="lastBtn" aria-label="最後一頁" title="最後一頁 (End)">⏭</button>
@@ -237,7 +249,7 @@ table.audit .no{color:#ff8a8a}
     <div class="switch"><input type="checkbox" id="sleepOn"><label for="sleepOn">睡前模式（音樂漸弱、播完停止）</label></div>
     <div class="field"><label for="sleepMin">睡前計時</label>
       <select id="sleepMin"><option value="0">不計時</option><option value="5">5 分鐘</option><option value="10">10 分鐘</option><option value="20">20 分鐘</option></select></div>
-    <div class="field"><button class="btn-ghost" id="editCapBtn">編輯本頁字幕</button><button class="btn-ghost" id="auditBtn">自我審查清單</button><button class="btn-ghost" id="resetBtn">重設所有設定</button></div>
+    <div class="field"><button class="btn-ghost" id="editCapBtn">編輯本頁字幕</button><button class="btn-ghost" id="auditBtn">自我審查清單</button><button class="btn-ghost" id="debugBtn">除錯資訊</button><button class="btn-ghost" id="resetBtn">重設所有設定</button></div>
   </div>
 </dialog>
 
@@ -252,6 +264,12 @@ table.audit .no{color:#ff8a8a}
       <button class="btn-ghost" id="capImport">匯入字幕檔</button>
       <input type="file" id="capFile" accept="application/json" hidden></div>
   </div>
+</dialog>
+
+<!-- 除錯資訊 -->
+<dialog id="debugDlg" aria-labelledby="debugT">
+  <div class="dlg-h"><h3 id="debugT">除錯資訊</h3><button class="ibtn" data-close aria-label="關閉">✕</button></div>
+  <div class="dlg-b"><p id="debugText" style="white-space:pre-wrap;overflow-wrap:anywhere"></p><button class="btn-ghost" id="debugRefresh">重新檢查</button></div>
 </dialog>
 
 <!-- 自我審查 -->
@@ -290,25 +308,27 @@ const fmt = s => { s=Math.max(0,Math.floor(s||0)); return Math.floor(s/60)+":"+S
 function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}} }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){} }
 const DEFAULT = {page:0,vVoice:100,vMusic:35,rate:1,cap:false,capSize:20,theme:"dark",
-  auto:true,duck:true,spiritOn:true,reduce:false,music:true,sleepOn:false,sleepMin:0,seen:[],captions:{},started:false};
+  auto:true,duck:true,spiritOn:true,reduce:false,music:true,muted:false,sleepOn:false,sleepMin:0,seen:[],captions:{},started:false};
 let S = Object.assign({}, DEFAULT, load());
 if(!Array.isArray(S.seen)) S.seen=[];
 if(typeof S.captions!=="object"||!S.captions) S.captions={};
 
 /* ---------- 狀態 ---------- */
 let cur = clamp(S.page|0,0,N-1);
-let voice = new Audio(), music = new Audio();
-voice.preload = "auto"; music.preload = "auto"; music.loop = true;
+let voice = $("narrationAudio"), music = $("backgroundMusic");
+let amb = $("endingAudio");
+voice.preload = "auto"; music.preload = "auto"; music.loop = true; amb.preload = "auto";
 let wantPlay = false, userInteracted = false, sleepTimer = null, sleepStart = 0;
 let musicFade = null, token = 0;
-const amb = new Audio(); amb.preload="auto";
 const preloaded = new Map();
+let imageReady = false, voiceReady = false, musicReady = false;
+let lastFailed = "";
 
 const url = p => encodeURI(BOOK.base + p);
 
 /* ---------- 音量與壓低 ---------- */
 function musicTarget(){
-  if(!S.music) return 0;
+  if(!S.music || S.muted) return 0;
   let v = S.vMusic/100;
   if(S.duck && !voice.paused && !voice.ended) v *= 0.45;
   if(S.sleepOn && sleepStart){
@@ -318,7 +338,8 @@ function musicTarget(){
   return clamp(v,0,1);
 }
 function applyVolumes(){
-  voice.volume = clamp(S.vVoice/100,0,1);
+  voice.volume = S.muted ? 0 : clamp(S.vVoice/100,0,1);
+  amb.volume = S.muted ? 0 : clamp(S.vMusic/100,0,1);
   voice.playbackRate = S.rate;
   if(!musicFade) music.volume = musicTarget();
 }
@@ -341,10 +362,43 @@ function preload(i){
   if(i<0||i>=N||preloaded.has(i)) return;
   const im = new Image(); im.src = url(BOOK.pages[i].img);
   const a = new Audio(); a.preload="auto"; a.src = url(BOOK.pages[i].voice);
-  preloaded.set(i,{im,a});
+  const m = new Audio(); m.preload="auto"; m.src = url(BOOK.pages[i].music);
+  const addHint = (href, as) => { const l=document.createElement("link"); l.rel="preload"; l.as=as; l.href=href; if(as==="audio") l.type="audio/mpeg"; l.dataset.bookPreload=String(i)+":"+as; document.head.appendChild(l); };
+  addHint(url(BOOK.pages[i].img),"image");
+  addHint(url(BOOK.pages[i].voice),"audio");
+  addHint(url(BOOK.pages[i].music),"audio");
+  preloaded.set(i,{im,a,m});
   if(preloaded.size>5){ const k=preloaded.keys().next().value; if(k!==cur) preloaded.delete(k); }
+  document.querySelectorAll("link[data-book-preload]").forEach(l=>{ if(!l.dataset.bookPreload.startsWith(String(i)+":")) l.remove(); });
 }
 
+function updateLoading(){
+  if(imageReady && voiceReady){ $("loading").classList.remove("on"); }
+  else $("loading").classList.add("on");
+}
+function showAssetError(message, kind){
+  lastFailed=kind||"all";
+  $("loading").classList.remove("on");
+  $("assetErrorText").textContent=message;
+  $("assetError").hidden=false;
+  toast(message);
+}
+function retryAssets(){
+  const P=BOOK.pages[cur]; const my=token;
+  $("assetError").hidden=true; $("loading").classList.add("on");
+  $("loading").textContent="正在重新載入素材…";
+  if(lastFailed==="image" || lastFailed==="all"){
+    imageReady=false; img.src=""; img.onload=()=>{if(my===token){imageReady=true;updateLoading();}};
+    img.onerror=()=>{if(my===token)showAssetError("圖片仍無法載入："+P.img,"image");}; img.src=url(P.img);
+  }
+  if(lastFailed==="voice" || lastFailed==="all"){
+    voiceReady=false; voice.pause(); voice.src=url(P.voice); voice.load();
+  }
+  if(lastFailed==="music" || lastFailed==="all"){
+    musicReady=false; music.pause(); music.src=url(P.music); music.load();
+  }
+  if(!lastFailed){ goTo(cur,{force:true}); return; }
+}
 function goTo(i, opts={}){
   i = clamp(i,0,N-1);
   const dir = i>=cur ? "next":"prev";
@@ -352,28 +406,36 @@ function goTo(i, opts={}){
   const changed = i!==cur || opts.force;
   cur = i;
   const P = BOOK.pages[cur];
-  $("end").classList.remove("on"); amb.pause();
+  $("end").classList.remove("on");
+  amb.pause(); amb.currentTime=0;
+  // 翻頁時立即停止舊頁旁白與音樂，避免快速翻頁時殘留舊聲音。
+  voice.pause(); music.pause();
+  $("assetError").hidden = true; lastFailed = "";
+  imageReady = voiceReady = musicReady = false;
   $("loading").classList.add("on");
+  $("loading").textContent = "正在載入圖片、旁白與背景音樂…";
   stage.classList.remove("turn-next","turn-prev");
   void stage.offsetWidth;
   if(changed && !S.reduce) stage.classList.add("turn-"+dir);
-  img.onload = ()=>{ if(my===token) $("loading").classList.remove("on"); };
-  img.onerror = ()=>{ $("loading").classList.remove("on"); toast("圖片載入失敗"); };
+  img.onload = ()=>{ if(my===token){ imageReady=true; updateLoading(); } };
+  img.onerror = ()=>{ if(my===token){ imageReady=false; showAssetError("圖片載入失敗："+P.img,"image"); } };
   img.src = url(P.img);
   img.alt = P.alt;
   $("pageTitle").textContent = cur===0 ? BOOK.title : `${BOOK.title} · ${cur}/${N-1}`;
+  $("pageIndicator").textContent = `第 ${cur+1} / ${N} 頁`;
   document.title = `語音繪本 · 第 ${cur+1} 頁`;
   announce(`第 ${cur+1} 頁，共 ${N} 頁`);
 
-  voice.pause();
+  voice.oncanplay = ()=>{ if(my===token){ voiceReady=true; updateLoading(); } };
+  voice.onerror = ()=>{ if(my===token) showAssetError("旁白載入失敗："+P.voice,"voice"); };
   voice.src = url(P.voice);
   voice.currentTime = 0;
   voice.load();
+  music.oncanplay = ()=>{ if(my===token){ musicReady=true; updateLoading(); } };
+  music.onerror = ()=>{ if(my===token){ musicReady=false; showAssetError("背景音樂載入失敗："+P.music,"music"); updateLoading(); } };
+  music.src = url(P.music);
+  music.load();
   applyVolumes();
-
-  // 音樂：每頁一首；同一首不重新載入
-  const mSrc = new URL(url(P.music), location.href).href;
-  if(music.src !== mSrc){ music.src = url(P.music); music.load(); }
 
   if(!S.seen.includes(cur)) S.seen.push(cur);
   S.page = cur; save();
@@ -390,40 +452,45 @@ function prev(){ if(cur>0) goTo(cur-1); }
 
 /* ---------- 播放 ---------- */
 function playAll(){
-  wantPlay = true; userInteracted = true;
+  userInteracted = true;
+  if(!voice.src){ showAssetError("找不到旁白素材，請重新載入。","voice"); return; }
+  wantPlay = true;
   const my = token;
+  applyVolumes();
   const pv = voice.play();
-  if(pv) pv.catch(e=>{ if(my===token){ wantPlay=false; updatePlayUI(); if(e.name!=="AbortError") toast("無法播放旁白，請再按一次播放"); }});
-  if(S.music){ const pm = music.play(); if(pm) pm.catch(()=>{}); }
+  if(pv) pv.catch(e=>{ if(my===token){ wantPlay=false; updatePlayUI(); if(e.name!=="AbortError") showAssetError("無法播放旁白，請確認 speech 資料夾與檔案名稱。","voice"); }});
+  if(S.music && !S.muted){ const pm = music.play(); if(pm) pm.catch(()=>{ if(my===token) toast("背景音樂無法播放，但旁白仍可使用"); }); }
   fadeMusicTo(musicTarget(),500);
   updatePlayUI(); startSleep();
 }
 function pauseAll(){
-  wantPlay = false; voice.pause(); fadeMusicTo(0,300);
-  setTimeout(()=>{ if(!wantPlay) music.pause(); },320);
+  wantPlay = false; voice.pause(); fadeMusicTo(0,180);
+  setTimeout(()=>{ if(!wantPlay) music.pause(); },200);
   updatePlayUI();
 }
 function toggle(){ wantPlay ? pauseAll() : playAll(); }
 function updatePlayUI(){
   const b=$("playBtn"); b.textContent = wantPlay ? "⏸" : "▶";
-  b.setAttribute("aria-label", wantPlay?"暫停":"播放");
+  b.setAttribute("aria-label", wantPlay?"暫停朗讀":"播放朗讀");
   updateSpirit();
 }
 function updateNav(){
   $("prevBtn").disabled = $("firstBtn").disabled = cur===0;
   $("prevEdge").disabled = cur===0;
   $("lastBtn").disabled = cur===N-1;
+  $("nextBtn").disabled = false;
+  $("nextEdge").disabled = false;
 }
 function updateSpirit(){ $("spirit").classList.toggle("on", S.spiritOn && wantPlay && !voice.paused); }
 
 function showEnd(){
   wantPlay=false; voice.pause(); fadeMusicTo(0,800); setTimeout(()=>music.pause(),850);
   updatePlayUI(); $("end").classList.add("on"); $("replayBtn").focus(); announce("故事結束");
-  try{ amb.src=url(BOOK.ending); amb.volume=clamp(S.vMusic/100,0,1); if(S.music) amb.play().catch(()=>{}); }catch(e){}
+  try{ amb.src=url(BOOK.ending); amb.volume=S.muted?0:clamp(S.vMusic/100,0,1); if(S.music&&!S.muted) amb.play().catch(()=>{}); }catch(e){}
 }
 
 /* ---------- 旁白事件 ---------- */
-voice.addEventListener("loadedmetadata",()=>{ $("timeAll").textContent = fmt(voice.duration/ S.rate); });
+voice.addEventListener("loadedmetadata",()=>{ $("timeAll").textContent = fmt(voice.duration/ S.rate); voiceReady=true; updateLoading(); });
 voice.addEventListener("timeupdate",()=>{
   if(!voice.duration) return;
   $("seek").value = Math.round(voice.currentTime/voice.duration*1000);
@@ -431,7 +498,7 @@ voice.addEventListener("timeupdate",()=>{
   if(S.sleepOn && sleepStart){ applyVolumes(); checkSleep(); }
 });
 voice.addEventListener("play",()=>{ if(!musicFade) music.volume=musicTarget(); else fadeMusicTo(musicTarget(),400); updateSpirit(); });
-voice.addEventListener("pause",()=>{ if(!musicFade) music.volume=musicTarget(); else fadeMusicTo(musicTarget(),400); updateSpirit(); });
+voice.addEventListener("pause",()=>{ if(!wantPlay) fadeMusicTo(0,180); else if(!musicFade) music.volume=musicTarget(); else fadeMusicTo(musicTarget(),400); updateSpirit(); });
 voice.addEventListener("ended",()=>{
   updateSpirit(); fadeMusicTo(musicTarget(),500);
   if(S.sleepOn){ pauseAll(); toast("睡前模式：已停止播放"); return; }
@@ -441,7 +508,8 @@ voice.addEventListener("ended",()=>{
   } else { wantPlay=false; updatePlayUI(); }
 });
 voice.addEventListener("error",()=>{ if(voice.src) toast("旁白檔案載入失敗"); });
-music.addEventListener("error",()=>{ /* 音樂失敗不影響閱讀 */ });
+music.addEventListener("canplay",()=>{musicReady=true;updateLoading();});
+music.addEventListener("error",()=>{ musicReady=false; if(wantPlay) toast("背景音樂載入失敗，旁白仍可繼續"); });
 $("seek").addEventListener("input",e=>{ if(voice.duration) voice.currentTime = e.target.value/1000*voice.duration; });
 function skip(s){ if(!voice.duration) return; voice.currentTime = clamp(voice.currentTime+s,0,voice.duration-0.05); }
 
@@ -500,6 +568,9 @@ function syncSettings(){
   $("spiritOn").checked=S.spiritOn; $("reduce").checked=S.reduce; $("sleepOn").checked=S.sleepOn;
   $("sleepMin").value=String(S.sleepMin);
   $("musicBtn").setAttribute("aria-pressed",S.music);
+  $("muteBtn").setAttribute("aria-pressed",S.muted);
+  $("muteBtn").setAttribute("aria-label",S.muted?"解除靜音":"靜音");
+  $("muteBtn").textContent=S.muted?"🔇":"🔊";
   document.documentElement.style.setProperty("--cap",S.capSize+"px");
 }
 function bindSetting(id,key,conv=v=>v,after=()=>{}){
@@ -521,15 +592,19 @@ bindSetting("sleepMin","sleepMin",Number,startSleep);
 
 /* ---------- 按鈕 ---------- */
 $("playBtn").onclick=toggle;
+$("retryBtn").onclick=retryAssets;
 $("nextBtn").onclick=next; $("nextEdge").onclick=next;
 $("prevBtn").onclick=prev; $("prevEdge").onclick=prev;
 $("firstBtn").onclick=()=>goTo(0); $("lastBtn").onclick=()=>goTo(N-1);
 $("back10").onclick=()=>skip(-5); $("fwd10").onclick=()=>skip(5);
 $("capBtn").onclick=()=>{ S.cap=!S.cap; save(); renderCaption(); };
 $("musicBtn").onclick=()=>{ S.music=!S.music; save(); syncSettings();
-  if(S.music&&wantPlay){ music.play().catch(()=>{}); } fadeMusicTo(musicTarget(),400);
-  if(!S.music) setTimeout(()=>{ if(!S.music) music.pause(); },450);
+  if(S.music&&wantPlay&&!S.muted){ music.play().catch(()=>{}); } fadeMusicTo(musicTarget(),400);
+  if(!S.music || S.muted) setTimeout(()=>{ if(!S.music || S.muted) music.pause(); },450);
   toast(S.music?"背景音樂：開":"背景音樂：關"); };
+$("muteBtn").onclick=()=>{ S.muted=!S.muted; save(); applyVolumes(); syncSettings();
+  if(S.muted){ voice.pause(); music.pause(); wantPlay=false; updatePlayUI(); }
+  toast(S.muted?"已靜音":"已解除靜音"); };
 $("menuBtn").onclick=()=>{ buildThumbs(); $("menuDlg").showModal(); };
 $("setBtn").onclick=()=>{ syncSettings(); $("setDlg").showModal(); };
 $("fsBtn").onclick=toggleFS;
@@ -561,13 +636,16 @@ $("capFile").onchange=async e=>{
 
 /* ---------- 鍵盤 ---------- */
 document.addEventListener("keydown",e=>{
-  if(e.target.matches("input[type=text],textarea,select")) return;
+  if(e.target.matches("input,textarea,select,[contenteditable=true]")) return;
   if(document.querySelector("dialog[open]")){ return; }
   if($("cover").style.display!=="none" && !$("cover").hidden && getComputedStyle($("cover")).display!=="none") return;
   const k=e.key;
-  if(k===" "&&!e.target.matches("button")){ e.preventDefault(); toggle(); }
-  else if(k==="ArrowRight"){ next(); }
-  else if(k==="ArrowLeft"){ prev(); }
+  if(k===" " && !e.repeat){
+    if(e.target.matches("button")) return;
+    e.preventDefault(); toggle();
+  }
+  else if(k==="ArrowRight"){ e.preventDefault(); next(); }
+  else if(k==="ArrowLeft"){ e.preventDefault(); prev(); }
   else if(k==="Home"){ goTo(0); } else if(k==="End"){ goTo(N-1); }
   else if(k==="j"||k==="J"){ skip(-5); } else if(k==="l"||k==="L"){ skip(5); }
   else if(k==="m"||k==="M"){ $("menuBtn").click(); }
@@ -598,7 +676,7 @@ if("mediaSession" in navigator){
   voice.addEventListener("play",setMeta);
 }
 document.addEventListener("visibilitychange",()=>{ if(document.hidden && wantPlay && !S.keepBg){ /* 保持播放，讓使用者可鎖屏聆聽 */ } });
-window.addEventListener("pagehide",save);
+window.addEventListener("pagehide",()=>{ save(); voice.pause(); music.pause(); amb.pause(); });
 window.addEventListener("online",()=>toast("網路已連線"));
 window.addEventListener("offline",()=>toast("目前離線，已快取的內容仍可閱讀"));
 
@@ -648,7 +726,10 @@ const AUDIT = [
  A("旁白速度可調（0.75–1.5×）",()=>[...$("rate").options].length>=4),
  A("可單獨關閉背景音樂",()=>hasEl("musicBtn")),
  A("睡前模式與計時器",()=>hasEl("sleepOn")&&hasEl("sleepMin")),
- A("預先載入下一頁與上一頁",()=>typeof preload==="function"&&preloaded.size>=0),
+ A("預先載入下一頁圖片、旁白與音樂",()=>typeof preload==="function"&&preloaded.size>=0),
+ A("提供靜音與解除靜音控制",()=>hasEl("muteBtn")&&typeof S.muted==="boolean"),
+ A("提供素材失敗重試控制",()=>hasEl("retryBtn")),
+ A("提供可見除錯資訊",()=>hasEl("debugBtn")&&hasEl("debugDlg")),
  A("音量值限制在 0–1",()=>voice.volume>=0&&voice.volume<=1&&music.volume>=0&&music.volume<=1),
  /* 操作方式 */
  A("鍵盤：空白鍵、方向鍵、Home/End",()=>true),
@@ -702,6 +783,9 @@ function runAudit(){
   return {total:AUDIT.length,pass:ok};
 }
 $("auditBtn").onclick=()=>{ $("setDlg").close(); runAudit(); $("auditDlg").showModal(); };
+function refreshDebug(){ const P=BOOK.pages[cur]; $("debugText").textContent=[`目前頁面：${cur+1}/${N}`,`圖片：${url(P.img)}`,`旁白：${url(P.voice)}`,`背景音樂：${url(P.music)}`,`圖片載入：${img.complete&&img.naturalWidth>0?"成功":"尚未完成／失敗"}`,`旁白狀態：${voice.readyState}（0=未載入，4=可播放）`,`音樂狀態：${music.readyState}`,`靜音：${S.muted?"開":"關"}`,`播放意圖：${wantPlay?"播放":"暫停"}`,`預載頁面：${[...preloaded.keys()].map(x=>x+1).join(", ")||"無"}`].join("\n"); }
+$("debugBtn").onclick=()=>{ $("setDlg").close(); refreshDebug(); $("debugDlg").showModal(); };
+$("debugRefresh").onclick=refreshDebug;
 window.runAudit = runAudit;
 
 /* ---------- 素材檢查 ---------- */
@@ -722,7 +806,9 @@ applyTheme(); applyReduce(); syncSettings();
 $("cvImg").src = url(BOOK.pages[0].img);
 img.src = url(BOOK.pages[cur].img); img.alt=BOOK.pages[cur].alt;
 renderDots(); renderCaption(); updateNav(); applyVolumes();
+$("pageIndicator").textContent=`第 ${cur+1} / ${N} 頁`;
 voice.src = url(BOOK.pages[cur].voice); music.src = url(BOOK.pages[cur].music);
+voice.load(); music.load();
 preload(cur+1);
 </script>
 </body>
